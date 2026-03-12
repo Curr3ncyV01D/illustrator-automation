@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Replace Object Operation",
+  "description": "Схема операции замены объекта на компонент из библиотеки",
+  "type": "object",
+  "required": ["type", "id", "target", "parameters"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "replaceObject",
+      "description": "Тип операции: replaceObject"
+    },
+    "id": {
+      "type": "string",
+      "description": "Уникальный идентификатор операции"
+    },
+    "target": {
+      "type": "string",
+      "description": "Имя заменяемого объекта в документе"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Параметры замены объекта",
+      "required": ["libraryFile", "sourceObject"],
+      "properties": {
+        "libraryFile": {
+          "type": "string",
+          "description": "Имя файла библиотеки компонентов (.ai)"
+        },
+        "sourceObject": {
+          "type": "string",
+          "description": "Имя исходного объекта-компонента в библиотеке"
+        },
+        "matchTargetSize": {
+          "type": "boolean",
+          "default": true,
+          "description": "Если true, новый объект масштабируется под размеры заменяемого объекта"
+        },
+        "scaleStroke": {
+          "type": "boolean",
+          "default": true,
+          "description": "Масштабировать ли толщину обводок при изменении размера объекта."
+        },
+        "replaceContents": {
+          "type": "boolean",
+          "default": true,
+          "description": "Если true и цель — группа/слой, заменяет все вложенные объекты"
+        },
+        "keepPosition": {
+          "type": "boolean",
+          "default": true,
+          "description": "Сохранять ли позицию оригинального объекта (центрирование)."
+        }
+      },
+      "additionalProperties": false
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Список ID операций, от которых зависит данная операция"
+    }
+  },
+  "additionalProperties": false
+}

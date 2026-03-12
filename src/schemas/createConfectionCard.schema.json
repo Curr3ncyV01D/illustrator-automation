@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Create Confection Card Operation",
+  "description": "Схема операции создания конфекционной карты (спецификации)",
+  "type": "object",
+  "required": ["type", "id", "parameters"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "createConfectionCard",
+      "description": "Тип операции: createConfectionCard"
+    },
+    "id": {
+      "type": "string",
+      "description": "Уникальный идентификатор операции"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Параметры создания карты",
+      "required": ["data"],
+      "properties": {
+        "layout": {
+          "type": "string",
+          "description": "Стиль оформления карты (например, 'classic')",
+          "default": "classic"
+        },
+        "data": {
+          "type": "array",
+          "description": "Список строк спецификации",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "sort", "pattern_qty", "cut_qty"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Название лекала/детали"
+              },
+              "sort": {
+                "type": ["string", "number"],
+                "description": "Порядок сортировки"
+              },
+              "pattern_qty": {
+                "type": ["string", "number"],
+                "description": "Количество лекал"
+              },
+              "cut_qty": {
+                "type": ["string", "number"],
+                "description": "Количество кроя"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Список ID операций, от которых зависит данная операция"
+    }
+  },
+  "additionalProperties": false
+}

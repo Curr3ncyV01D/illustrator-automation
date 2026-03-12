@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "width": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "Значение размера"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["mm", "cm", "in", "pt", "px"],
+          "description": "Единица измерения",
+          "default": "pt"
+        },
+        "action": {
+          "type": "string",
+          "enum": ["increase", "decrease", "set"],
+          "description": "Действие: увеличить, уменьшить или установить"
+        }
+      },
+      "required": ["value", "action"]
+    },
+    "height": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "Значение размера"
+        },
+        "unit": {
+          "type": "string",
+          "enum": ["mm", "cm", "in", "pt", "px"],
+          "description": "Единица измерения",
+          "default": "pt"
+        },
+        "action": {
+          "type": "string",
+          "enum": ["increase", "decrease", "set"],
+          "description": "Действие: увеличить, уменьшить или установить"
+        }
+      },
+      "required": ["value", "action"]
+    }
+  },
+  "anyOf": [
+    { "required": ["width"] },
+    { "required": ["height"] }
+  ]
+}

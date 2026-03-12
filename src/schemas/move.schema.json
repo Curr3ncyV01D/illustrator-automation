@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Move Operation",
+  "description": "Схема операции перемещения объекта",
+  "type": "object",
+  "required": ["type", "id", "target", "parameters"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "move",
+      "description": "Тип операции: move"
+    },
+    "id": {
+      "type": "string",
+      "description": "Уникальный идентификатор операции"
+    },
+    "target": {
+      "type": "string",
+      "description": "Имя целевого объекта для перемещения"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Параметры перемещения",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["absolute", "relative"],
+          "default": "absolute",
+          "description": "Режим перемещения: absolute (абсолютные координаты) или relative (смещение)"
+        },
+        "x": {
+          "$ref": "common.json#/definitions/actionValue",
+          "description": "Параметры координаты X"
+        },
+        "y": {
+          "$ref": "common.json#/definitions/actionValue",
+          "description": "Параметры координаты Y"
+        }
+      },
+      "anyOf": [
+        { "required": ["x"] },
+        { "required": ["y"] }
+      ],
+      "additionalProperties": false
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Список ID операций, от которых зависит данная операция"
+    }
+  },
+  "additionalProperties": false
+}

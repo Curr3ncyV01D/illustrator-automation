@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "Общая схема для операций",
+  "properties": {
+    "resize": {
+      "$ref": "resizeSchema.json"
+    },
+    "move": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["relative", "absolute"],
+          "description": "Режим перемещения: relative (относительно текущей позиции) или absolute (абсолютные координаты)"
+        },
+        "x": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "description": "Значение координаты X или смещения"
+            },
+            "unit": {
+              "type": "string",
+              "enum": ["mm", "cm", "in", "pt", "px"],
+              "description": "Единица измерения",
+              "default": "pt"
+            },
+            "action": {
+              "type": "string",
+              "enum": ["increase", "decrease", "set"],
+              "description": "Действие (для relative: increase/decrease, для absolute: set)"
+            }
+          },
+          "required": ["value", "action"]
+        },
+        "y": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number",
+              "description": "Значение координаты Y или смещения"
+            },
+            "unit": {
+              "type": "string",
+              "enum": ["mm", "cm", "in", "pt", "px"],
+              "description": "Единица измерения",
+              "default": "pt"
+            },
+            "action": {
+              "type": "string",
+              "enum": ["increase", "decrease", "set"],
+              "description": "Действие (для relative: increase/decrease, для absolute: set)"
+            }
+          },
+          "required": ["value", "action"]
+        }
+      },
+      "anyOf": [
+        { "required": ["x"] },
+        { "required": ["y"] }
+      ]
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+    "version": "1.0",
+    "targetFile": "template.ai",
+    "operations": [
+        {
+            "id": "op_card_classic",
+            "type": "createConfectionCard",
+            "parameters": {
+                "layout": "classic",
+                "data": [
+                    { "name": "Front", "sort": 1, "pattern_qty": 1, "cut_qty": 1 },
+                    { "name": "Back", "sort": 2, "pattern_qty": 1, "cut_qty": 1 },
+                    { "name": "Sleeve", "sort": 3, "pattern_qty": 2, "cut_qty": 2 },
+                    { "name": "Collar", "sort": 4, "pattern_qty": 1, "cut_qty": 1 },
+                    { "name": "Pocket", "sort": 5, "pattern_qty": 1, "cut_qty": 1 }
+                ]
+            }
+        }
+    ],
+    "metadata": {
+        "description": "Test Confection Card with 'classic' layout"
+    }
+}

@@ -1,0 +1,73 @@
+{
+  "version": "1.0",
+  "targetFile": "template_test.ai",
+  "operations": [
+    {
+      "id": "replaceButtonsRight",
+      "type": "replaceObject",
+      "target": "Слой 1/РукавПравый/Пуговицы",
+      "parameters": {
+        "libraryFile": "Buttons.ai",
+        "sourceObject": "Пуговица1"
+      }
+    },
+    {
+      "id": "replaceButtonsLeft",
+      "type": "replaceObject",
+      "target": "Слой 1/РукавЛевый/Пуговицы",
+      "parameters": {
+        "libraryFile": "Buttons.ai",
+        "sourceObject": "Пуговица1"
+      }
+    },
+    {
+      "id": "replaceButtonsMiddle",
+      "type": "replaceObject",
+      "target": "Слой 1/ПуговицыСередина",
+      "parameters": {
+        "libraryFile": "Buttons.ai",
+        "sourceObject": "Пуговица2"
+      }
+    },
+    {
+      "id": "shortenCollar1",
+      "type": "resize",
+      "target":"Слой 1/Воротник/БольшойКонтур",
+      "parameters": {
+        "width": {                      
+          "value": 30,
+          "unit": "mm",
+          "action": "decrease"
+        }
+      },
+      "dependencies": []
+    },
+    {
+      "id": "shortenCollar2",
+      "type": "resize",
+      "target":"Слой 1/Воротник/МалыйКонтур",
+      "parameters": {
+        "width": {                      
+          "value": 30,
+          "unit": "mm",
+          "action": "decrease"
+        }
+      },
+      "dependencies": ["shortenCollar1"]
+    },
+    {
+      "id": "liftingCollar",
+      "type": "move",
+      "target":"Слой 1/Воротник/МалыйКонтур",
+      "parameters": {
+      "mode": "relative",
+      "y": {
+        "value": 2,
+        "unit": "mm",
+        "action": "increase"
+      },
+      "dependencies": ["shortenCollar2"]
+      }
+    }
+  ]
+}

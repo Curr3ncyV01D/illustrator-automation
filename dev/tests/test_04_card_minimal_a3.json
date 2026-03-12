@@ -1,0 +1,26 @@
+{
+    "version": "1.0",
+    "targetFile": "template.ai",
+    "operations": [
+        {
+            "id": "op_card_minimal_a3",
+            "type": "createConfectionCard",
+            "parameters": {
+                "layout": "minimal_a3",
+                "data": [
+                    { "name": "Front Panel", "sort": 1, "pattern_qty": 1, "cut_qty": 1 },
+                    { "name": "Back Panel", "sort": 2, "pattern_qty": 1, "cut_qty": 1 },
+                    { "name": "Sleeve Left", "sort": 3, "pattern_qty": 1, "cut_qty": 1 },
+                    { "name": "Sleeve Right", "sort": 4, "pattern_qty": 1, "cut_qty": 1 },
+                    { "name": "Hood", "sort": 5, "pattern_qty": 2, "cut_qty": 2 },
+                    { "name": "Pocket", "sort": 6, "pattern_qty": 1, "cut_qty": 1 },
+                    { "name": "Cuff", "sort": 7, "pattern_qty": 2, "cut_qty": 2 },
+                    { "name": "Waistband", "sort": 8, "pattern_qty": 1, "cut_qty": 1 }
+                ]
+            }
+        }
+    ],
+    "metadata": {
+        "description": "Test Confection Card with 'minimal_a3' layout (larger paper size style)"
+    }
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Common Definitions",
+  "description": "Общие определения для схем автоматизации Illustrator",
+  "definitions": {
+    "unit": {
+      "type": "string",
+      "enum": ["mm", "cm", "in", "pt", "px"],
+      "description": "Единица измерения (мм, см, дюймы, пункты, пиксели)"
+    },
+    "valueWithUnit": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "Числовое значение"
+        },
+        "unit": {
+          "$ref": "#/definitions/unit"
+        }
+      },
+      "required": ["value"],
+      "additionalProperties": false
+    },
+    "actionValue": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "number",
+          "description": "Числовое значение"
+        },
+        "unit": {
+          "$ref": "#/definitions/unit",
+          "default": "pt"
+        },
+        "action": {
+          "type": "string",
+          "enum": ["set", "increase", "decrease"],
+          "description": "Тип действия: установить (set), увеличить (increase) или уменьшить (decrease)"
+        }
+      },
+      "required": ["value", "action"],
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Дата и время создания"
+        },
+        "author": {
+          "type": "string",
+          "description": "Автор изменений"
+        },
+        "jobId": {
+          "type": "string",
+          "description": "Идентификатор задачи"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

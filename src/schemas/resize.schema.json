@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Resize Operation",
+  "description": "Схема операции изменения размера объекта",
+  "type": "object",
+  "required": ["type", "id", "target", "parameters"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "const": "resize",
+      "description": "Тип операции: resize"
+    },
+    "id": {
+      "type": "string",
+      "description": "Уникальный идентификатор операции"
+    },
+    "target": {
+      "type": "string",
+      "description": "Имя целевого объекта для изменения размера"
+    },
+    "parameters": {
+      "type": "object",
+      "description": "Параметры изменения размера",
+      "properties": {
+        "width": {
+          "$ref": "common.json#/definitions/actionValue",
+          "description": "Параметры ширины"
+        },
+        "height": {
+          "$ref": "common.json#/definitions/actionValue",
+          "description": "Параметры высоты"
+        }
+      },
+      "anyOf": [
+        { "required": ["width"] },
+        { "required": ["height"] }
+      ],
+      "additionalProperties": false
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Список ID операций, от которых зависит данная операция"
+    }
+  },
+  "additionalProperties": false
+}

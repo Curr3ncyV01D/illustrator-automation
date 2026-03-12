@@ -1,0 +1,18 @@
+{
+    "version": "1.0",
+    "targetFile": "template.ai",
+    "operations": [
+        {
+            "id": "op_replace_1",
+            "type": "replaceObject",
+            "parameters": {
+                "target": "Circle",
+                "libraryFile": "Buttons.ai",
+                "sourceObject": "Пуговица1"
+            }
+        }
+    ],
+    "metadata": {
+        "description": "Test replace operation: Replace 'Circle' with 'Пуговица1' from Buttons.ai"
+    }
+}   
