@@ -4,22 +4,22 @@ import sys
 from bridge.config import LOG_FILE
 
 def setup_logger(name: str = "Bridge") -> logging.Logger:
-    """Configures and returns the standard project logger."""
+    """Настраивает и возвращает стандартный логгер проекта."""
     
-    # Configure root logger or create a new one
+    # Настройка корневого логгера или создание нового
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     
-    # Avoid adding handlers multiple times if already configured
+    # Предотвращение повторного добавления обработчиков, если они уже настроены
     if not logger.handlers:
-        # File Handler
+        # Обработчик файла (File Handler)
         file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
         file_handler.setLevel(logging.INFO)
         file_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
         
-        # Console Handler
+        # Обработчик консоли (Console Handler)
         console_handler = logging.StreamHandler(sys.stdout)
         console_handler.setLevel(logging.INFO)
         console_formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
@@ -28,5 +28,5 @@ def setup_logger(name: str = "Bridge") -> logging.Logger:
         
     return logger
 
-# Create a default logger instance
+# Создание экземпляра логгера по умолчанию
 logger = setup_logger()

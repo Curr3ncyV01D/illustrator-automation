@@ -45,33 +45,33 @@ async def get_status(_: str = Depends(verify_api_key)):
 
 async def perform_job_processing(job: JobRequest):
     """
-    Background task to process the job.
+    Фоновая задача для обработки задания.
     """
     runner_script_path = None
     try:
-        # 1. Prepare workspace (creates folders and commands.json)
-        # Normalize the source file path
+        # 1. Подготовка рабочего пространства (создает папки и commands.json)
+        # Нормализация пути к исходному файлу
         source_ai_path = Path(normalize_path(job.file_path))
         
         commands_json_path, runner_script_path = prepare_job_workspace(job.job_id, job.file_path, job.commands)
         
-        # 2. Create runner script
+        # 2. Создание скрипта раннера
         create_runner_script(job.job_id, runner_script_path)
         
-        # 3. Wait for input files (Handshake)
-        # We wait for commands.json AND the source AI file which is copied by the test.
+        # 3. Ожидание входных файлов (Handshake)
+        # Мы ждем commands.json И исходный AI-файл, который копируется тестом.
         wait_for_input(commands_json_path, source_ai_path=source_ai_path, timeout=30.0)
         
-        # 4. Run Illustrator
+        # 4. Запуск Illustrator
         await illustrator_service.run_script_with_watchdog(runner_script_path, job.job_id)
         
-        # 5. Validate result
+        # 5. Валидация результата
         validate_output_pdf(job.job_id)
         logger.info(f"[{job.job_id}] Background job completed successfully")
         
     except (WorkspaceTimeoutError, IllustratorTimeoutError) as e:
         logger.error(f"[{job.job_id}] Background job TIMEOUT: {e}")
-        analyze_job_log(job.job_id) # Log analysis if possible
+        analyze_job_log(job.job_id) # Анализ лога, если возможно
     except (WorkspaceValidationError, WorkspaceError, IllustratorError) as e:
         logger.error(f"[{job.job_id}] Background job ERROR: {e}")
         analyze_job_log(job.job_id)
@@ -93,12 +93,12 @@ async def process_job(
     if busy_lock.locked():
         raise HTTPException(status_code=429, detail="Service is busy processing another job")
     
-    # Path Traversal Validation
+    # Валидация на Path Traversal
     try:
-        # 1. Validate Job ID path (must be within jobs directory)
+        # 1. Валидация пути Job ID (должен быть внутри директории jobs)
         validate_secure_path(job.job_id, job_id=job.job_id)
         
-        # 2. Validate Source File path (must be within exchange directory via Docker mapping)
+        # 2. Валидация пути исходного файла (должен быть внутри директории exchange через маппинг Docker)
         validate_secure_path(job.file_path)
         
     except PermissionError as e:

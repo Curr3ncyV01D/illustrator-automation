@@ -4,9 +4,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
-# --- Configuration ---
-# Detect current directory (assuming this file is in bridge/)
-# So BASE_DIR should be the parent of this file's parent (illustrator-automation root)
+# --- Конфигурация ---
+# Определение текущей директории (предполагается, что этот файл находится в bridge/)
+# Таким образом, BASE_DIR должен быть родителем родителя этого файла (корень illustrator-automation)
 # bridge/config.py -> parent = bridge -> parent = root
 BASE_DIR = Path(__file__).parent.parent.absolute()
 
@@ -14,21 +14,21 @@ LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 LOG_FILE = LOG_DIR / "bridge.log"
 
-# Using 'exchange' for Docker volume mapping, 'dev' for local development assets
+# Использование 'exchange' для маппинга томов Docker, 'dev' для локальных ресурсов разработки
 EXCHANGE_DIR = BASE_DIR / "exchange"
 DEV_DIR = BASE_DIR / "dev"
-BASE_JOBS_DIR = EXCHANGE_DIR / "jobs" # Follows the new structure: exchange/jobs/{job_id}/input
+BASE_JOBS_DIR = EXCHANGE_DIR / "jobs" # Соответствует новой структуре: exchange/jobs/{job_id}/input
 INPUT_DIR = BASE_JOBS_DIR
 LAUNCH_JS_PATH = BASE_DIR / "launch.js"
 
-# Environment Variables
+# Переменные окружения
 DEFAULT_JOB_TIMEOUT_SECONDS = int(os.getenv("BRIDGE_JOB_TIMEOUT_SECONDS", "300"))
 EXPECTED_API_KEY = os.getenv("BRIDGE_API_KEY", "dev-key")
 
-# Docker Path Mapping
-# We map /data/exchange to local exchange folder
+# Маппинг путей Docker
+# Мы маппим /data/exchange на локальную папку exchange
 DOCKER_PREFIX = "/data/exchange"
 WINDOWS_PREFIX = str(EXCHANGE_DIR)
 
-# Illustrator COM Constants
+# Константы Illustrator COM
 AI_DONT_DISPLAY_ALERTS = -1  # UserInteractionLevel.dontDisplayAlerts

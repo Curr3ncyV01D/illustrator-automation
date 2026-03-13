@@ -12,16 +12,16 @@ from bridge.utils.logger import logger
 from bridge.config import AI_DONT_DISPLAY_ALERTS
 
 class IllustratorError(Exception):
-    """Base exception for Illustrator service errors."""
+    """Базовое исключение для ошибок сервиса Illustrator."""
     pass
 
 class TimeoutError(IllustratorError):
-    """Raised when a job times out."""
+    """Вызывается при превышении времени ожидания выполнения задачи."""
     pass
 
 class IllustratorService:
     """
-    Manages the Adobe Illustrator COM object and process execution.
+    Управляет объектом Illustrator COM и выполнением процессов.
     """
     def __init__(self, job_timeout_seconds: int):
         self.app = None
@@ -29,7 +29,7 @@ class IllustratorService:
         self._executor = ThreadPoolExecutor(max_workers=1)
 
     def _init_com(self):
-        """Initializes the COM library for the current thread."""
+        """Инициализирует библиотеку COM для текущего потока."""
         try:
             pythoncom.CoInitialize()
             return True
@@ -38,13 +38,13 @@ class IllustratorService:
             return False
 
     def _release_com(self):
-        """Releases the COM library for the current thread."""
+        """Освобождает библиотеку COM для текущего потока."""
         pythoncom.CoUninitialize()
 
     def _get_or_start_illustrator(self):
         """
-        Gets the active Illustrator instance or starts a new one.
-        This method should be called within a COM-initialized thread.
+        Получает активный экземпляр Illustrator или запускает новый.
+        Этот метод должен вызываться внутри потока с инициализированным COM.
         """
         try:
             self.app = win32com.client.GetActiveObject("Illustrator.Application")
@@ -59,7 +59,7 @@ class IllustratorService:
 
     def _run_script_task(self, runner_path: Path, job_id: str):
         """
-        The actual task that runs in a separate thread to interact with Illustrator.
+        Фактическая задача, которая запускается в отдельном потоке для взаимодействия с Illustrator.
         """
         if not self._init_com():
             raise IllustratorError("COM initialization failed.")
@@ -80,8 +80,8 @@ class IllustratorService:
 
     async def run_script_with_watchdog(self, runner_path: Path, job_id: str):
         """
-        Executes the Illustrator script in a separate thread with a timeout (watchdog).
-        This is an async method that can be awaited from the FastAPI event loop.
+        Выполняет скрипт Illustrator в отдельном потоке с контролем времени выполнения (watchdog).
+        Это асинхронный метод, который можно ожидать из цикла событий FastAPI.
         """
         if not runner_path.exists():
             raise IllustratorError(f"Runner script not found at {runner_path}")
@@ -115,7 +115,7 @@ class IllustratorService:
     @staticmethod
     def force_cleanup():
         """
-        Finds and forcefully terminates all Illustrator.exe processes.
+        Находит и принудительно завершает все процессы Illustrator.exe.
         """
         logger.warning("Attempting to forcefully terminate all Illustrator processes...")
         killed_count = 0
@@ -150,5 +150,5 @@ class IllustratorService:
             logger.error(f"Error while waiting for processes to terminate: {e}")
 
     def shutdown(self):
-        """Shuts down the thread pool executor."""
+        """Завершает работу пула потоков (executor)."""
         self._executor.shutdown(wait=True)

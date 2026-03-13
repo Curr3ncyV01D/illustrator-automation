@@ -6,28 +6,28 @@ from bridge.utils.logger import logger
 
 def analyze_job_log(job_id: str) -> Optional[str]:
     """
-    Reads the last 10 lines of the job's log file and checks for known error keywords.
-    Returns a specific error message if found, otherwise None.
+    Читает последние 10 строк лог-файла задачи и ищет известные ключевые слова ошибок.
+    Возвращает конкретное сообщение об ошибке, если оно найдено, иначе None.
     """
     log_dir = EXCHANGE_DIR / "jobs" / job_id / "output" / "logs"
     if not log_dir.exists():
         return None
         
     try:
-        # Find the most recent log file
+        # Поиск самого свежего лог-файла
         log_files = sorted(log_dir.glob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
         if not log_files:
             return None
             
         latest_log = log_files[0]
         
-        # Read last 10 lines
+        # Чтение последних 10 строк
         with open(latest_log, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
             last_lines = lines[-10:] if len(lines) > 10 else lines
             content = "".join(last_lines)
             
-        # Check for keywords
+        # Проверка ключевых слов
         error_keywords = {
             "Font not found": "Font missing in document",
             "Version mismatch": "Illustrator version mismatch",
@@ -40,7 +40,7 @@ def analyze_job_log(job_id: str) -> Optional[str]:
                 logger.warning(f"[{job_id}] Detected known error in log: {keyword}")
                 return message
                 
-        # Also return the last error line if it contains "Error"
+        # Также возвращаем последнюю строку с ошибкой, если она содержит "Error"
         for line in reversed(last_lines):
             if "Error" in line or "Exception" in line:
                 return f"Script Error: {line.strip()}"
