@@ -25,7 +25,7 @@
 
         ↓ (HTTP + API Key)
 
-[ FastAPI Bridge (Host/Windows) ] 
+[ Bridge (Host/Windows) ] 
 
         ↓ (COM/OLE Automation)
 
