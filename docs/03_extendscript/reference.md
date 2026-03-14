@@ -14,8 +14,8 @@ src/
 ├── schemas/          # JSON-схемы для валидации команд
 └── utils/            # Вспомогательные модули (логи, валидаторы)
 ```
-
-## 1. Архитектура проекта
+---
+## Архитектура проекта
 
 Внутренняя структура проекта организована по модульному принципу для обеспечения масштабируемости и простоты тестирования в среде ES3.
 
@@ -27,6 +27,25 @@ src/
 | `schemas/` | JSON-схемы для валидации входных данных и параметров операций. | [main.schema.json](/src/schemas/main.schema.json), [operationSchema.json](/src/schemas/operationSchema.json) |
 | `utils/` | Вспомогательные модули: логгер, обработчик ошибок, валидатор. | [errorHandler.js](/src/utils/errorHandler.js), [logger.js](/src/utils/logger.js), [validator.js](/src/utils/validator.js) |
 | `utils/modules/` | Специализированные утилиты для работы с объектами и геометрией. | [objectFinder.js](/src/utils/modules/objectFinder.js), [unitConverter.js](/src/utils/modules/unitConverter.js) |
+
+## 1. Инициализация и Контекст (Context Injection)
+
+Ядро ExtendScript не выполняет самообнаружение путей. Вместо этого оно полагается на **инъекцию контекста** от Моста через метод `Config.init()`.
+
+### Метод `Config.init(codeRoot, dataRoot, jobId)`
+Вызывается в самом начале выполнения Раннера.
+
+- **`codeRoot`**: Абсолютный путь к директории `src/`. Используется для подключения модулей, утилит и схем.
+- **`dataRoot`**: Абсолютный путь к директории `exchange/`. Используется как база для поиска файлов задач.
+- **`jobId`**: Уникальный идентификатор задачи. На его основе строятся пути: `dataRoot + "/jobs/" + jobId + "/input/"`.
+
+### Точка входа: `main()`
+Файл [main.js](/src/core/main.js) содержит универсальную функцию `main(jsonFilePath, jobId, codeRoot, dataRoot)`, которая:
+1. Принимает все параметры от Раннера.
+2. Инициализирует глобальные объекты `Config` и `Logger`.
+3. Запускает цикл обработки команд через `Orchestrator`.
+
+
 
 ## 2. Оркестрация
 

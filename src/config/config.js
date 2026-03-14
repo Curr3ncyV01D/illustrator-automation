@@ -14,11 +14,12 @@ var Config = {
 
     /**
      * Инициализация конфигурации
-     * @param {String} basePath - корневая папка проекта
+     * @param {String} codeRoot - путь к исходному коду (папка src)
+     * @param {String} dataRoot - путь к данным (папка exchange)
      * @param {String} jobId - ID текущей задачи
      */
-    init: function(basePath, jobId) {
-        this.paths.initialize(basePath, jobId);
+    init: function(codeRoot, dataRoot, jobId) {
+        this.paths.initialize(codeRoot, dataRoot, jobId);
     }
 };
 

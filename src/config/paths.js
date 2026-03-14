@@ -5,7 +5,8 @@
 
 var Paths = {
     // Базовые пути (будут настроены динамически)
-    BASE_PATH: '',
+    CODE_ROOT: '',
+    DATA_ROOT: '',
     INPUT_PATH: '',
     OUTPUT_PATH: '',
     SOURCE_FILES_PATH: '',
@@ -17,35 +18,29 @@ var Paths = {
     LOCAL_COMPONENTS_PATH: '',
     
     /**
-     * Инициализация путей на основе базового пути проекта
-     * @param {String} basePath - базовый путь к папке проекта
+     * Инициализация путей на основе корня кода и корня данных
+     * @param {String} codeRoot - путь к исходному коду (src)
+     * @param {String} dataRoot - путь к данным (exchange)
      * @param {String} [jobId] - ID текущей задачи (опционально)
      */
-    initialize: function(basePath, jobId) {
-        // Если basePath указывает на файл, берем его родительскую папку
-        var testFile = new File(basePath);
-        if (testFile.exists && !testFile instanceof Folder) {
-            var parentFolder = testFile.parent;
-            this.BASE_PATH = parentFolder.fsName;
-        } else {
-            // Если это путь к папке, используем его напрямую
-            this.BASE_PATH = basePath;
-        }
+    initialize: function(codeRoot, dataRoot, jobId) {
+        this.CODE_ROOT = codeRoot;
+        this.DATA_ROOT = dataRoot;
 
-        // Глобальная библиотека (общая для всех задач)
-        this.GLOBAL_LIBRARY_PATH = this.join(this.BASE_PATH, 'exchange/library');
+        // Глобальная библиотека (общая для всех задач, лежит в exchange/library)
+        this.GLOBAL_LIBRARY_PATH = this.join(this.DATA_ROOT, 'library');
 
         if (jobId && jobId !== 'default') {
             // Режим Dynamic Runner
-            // Пути строятся относительно папки exchange/jobs/{jobId}
-            var jobPath = 'exchange/jobs/' + jobId;
-            var fullJobPath = this.join(this.BASE_PATH, jobPath);
+            // Пути строятся относительно папки jobs/{jobId} внутри DATA_ROOT (exchange)
+            var jobPath = 'jobs/' + jobId;
+            var fullJobPath = this.join(this.DATA_ROOT, jobPath);
             
             this.INPUT_PATH = this.join(fullJobPath, 'input');
             this.OUTPUT_PATH = this.join(fullJobPath, 'output');
             this.LOGS_PATH = this.join(this.OUTPUT_PATH, 'logs');
-            this.JSON_PATH = this.INPUT_PATH; // JSON лежит прямо в input
-            this.SOURCE_FILES_PATH = this.join(this.INPUT_PATH, 'source_files'); // Опционально
+            this.JSON_PATH = this.INPUT_PATH; // JSON лежит прямо в input (commands.json)
+            this.SOURCE_FILES_PATH = this.join(this.INPUT_PATH, 'source_files');
             this.LOCAL_COMPONENTS_PATH = this.join(this.INPUT_PATH, 'components');
             
             this.AI_PATH = this.join(this.OUTPUT_PATH, 'ai');
@@ -53,8 +48,9 @@ var Paths = {
         } else {
             // Стандартный режим (Autonomous)
             // Обновленная структура: dev/input, dev/output
-            this.INPUT_PATH = this.join(this.BASE_PATH, 'input');
-            this.OUTPUT_PATH = this.join(this.BASE_PATH, 'output');
+            // Здесь BASE_PATH заменен на DATA_ROOT для консистентности
+            this.INPUT_PATH = this.join(this.DATA_ROOT, 'input');
+            this.OUTPUT_PATH = this.join(this.DATA_ROOT, 'output');
             this.SOURCE_FILES_PATH = this.join(this.INPUT_PATH, 'source_files');
             this.JSON_PATH = this.join(this.INPUT_PATH, 'json');
             this.LOGS_PATH = this.join(this.OUTPUT_PATH, 'logs');

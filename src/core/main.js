@@ -24,85 +24,46 @@
 /**
  * Главная функция приложения
  * @param {String} jsonFilePath - путь к JSON файлу команды
- * @param {String} [jobId] - ID текущей задачи (опционально)
+ * @param {String} jobId - ID текущей задачи
+ * @param {String} [codeRoot] - путь к исходному коду (опционально)
+ * @param {String} [dataRoot] - путь к данным (опционально)
  */
-function main(jsonFilePath, jobId) {
+function main(jsonFilePath, jobId, codeRoot, dataRoot) {
     var startTime = new Date();
     var doc = null;
     
     try {
         // 1. Инициализация путей и конфигурации
-        // Если main вызывается из launch.js, Config.init уже был вызван.
-        // Но если main вызывается напрямую (например, из сгенерированного runner.jsx), 
-        // нам нужно инициализировать конфиг здесь, если он еще не инициализирован для этого jobId.
+        // Если main вызывается из раннера, Config.init уже был вызван глобально.
+        // Однако мы вызываем его еще раз для гарантии правильных путей текущей задачи.
         
-        // В текущей реализации мы всегда инициализируем Paths.
-        // Определяем базовый путь
-        var jsonFileObj = new File(jsonFilePath);
-        var currentPath = jsonFileObj.parent.fsName;
-        var basePath = currentPath;
+        var finalCodeRoot = codeRoot;
+        var finalDataRoot = dataRoot;
         
-        // Попытка найти корень проекта, если вызов прямой
-        // (Логика поиска корня из предыдущей версии main.js)
-        var testFolder = new Folder(currentPath);
-        var found = false;
-        var maxLevels = 10; // Защита от бесконечного цикла
-        var level = 0;
-        
-        while (!found && level < maxLevels) {
-            var inputFolder = new Folder(testFolder.fsName + '/dev/input');
-            if (inputFolder.exists) {
-                basePath = testFolder.fsName;
-                found = true;
-            } else {
-                var stdInputFolder = new Folder(testFolder.fsName + '/input');
-                if (stdInputFolder.exists) {
-                     basePath = testFolder.fsName;
-                     found = true;
-                } else {
-                    testFolder = testFolder.parent;
-                    if (!testFolder || testFolder.fsName === testFolder.parent.fsName) {
-                        // Достигли корня или не можем подняться выше
-                        break;
-                    }
-                    level++;
-                }
+        if (!finalCodeRoot || !finalDataRoot) {
+            // Фаллбек вычисление корней, если они не переданы в инъекции
+            var scriptFile = new File($.fileName);
+            if (scriptFile.parent && scriptFile.parent.parent) {
+                finalCodeRoot = scriptFile.parent.parent.fsName;
+            }
+            if (finalCodeRoot) {
+                var projectRoot = new File(finalCodeRoot).parent.fsName;
+                finalDataRoot = projectRoot + "/exchange";
             }
         }
-        
-        // Если не нашли, используем родительскую папку от JSON файла (для случаев когда JSON в корне проекта)
-        if (!found) {
-            basePath = jsonFileObj.parent.fsName;
-        }
-        
-        // ВАЖНО: При использовании Dynamic Runner (jobId), basePath может быть переопределен
-        // Но сейчас мы полагаемся на то, что jsonFilePath уже содержит нужную структуру
-        // Однако, если мы используем jobId, мы хотим, чтобы Paths.initialize построил пути относительно
-        // exchange/jobs/{jobId}, поэтому basePath должен быть корневой папкой проекта (где exchange).
-        
-        // Если передан jobId, мы должны найти корень проекта, а не корень задачи.
-        // Корень проекта обычно там, где лежит скрипт main.js (src/core/main.js) -> parent -> parent
-        if (jobId && jobId !== 'default') {
-             var scriptFile = new File($.fileName);
-             if (scriptFile.name === 'launch.js' || scriptFile.name === 'launch_test.js') {
-                 basePath = scriptFile.parent.fsName;
-             } else {
-                 // main.js -> core -> src -> project_root
-                 if (scriptFile.parent && scriptFile.parent.parent && scriptFile.parent.parent.parent) {
-                     basePath = scriptFile.parent.parent.parent.fsName;
-                 }
-             }
-        }
-        
+
         // Инициализируем конфигурацию
-        Config.init(basePath, jobId);
+        Config.init(finalCodeRoot, finalDataRoot, jobId);
+        
+        // Инициализация логгера и вывод отладочной информации
+        Logger.initialize();
+        Logger.info('Инициализация приложения:', STAGES.INIT);
+        Logger.info('CODE_ROOT: ' + Config.paths.CODE_ROOT, STAGES.INIT);
+        Logger.info('DATA_ROOT: ' + Config.paths.DATA_ROOT, STAGES.INIT);
+        
         Helpers.paths.createOutputStructure();
         
-        // 2. Инициализация логгера
-        Logger.initialize();
-        Logger.info('Приложение запущено', STAGES.INIT);
-        
-        // 3. Чтение JSON файла
+        // 2. Чтение JSON файла
         Logger.info('Чтение JSON файла: ' + jsonFilePath, STAGES.JSON);
         var jsonFile = new File(jsonFilePath);
         

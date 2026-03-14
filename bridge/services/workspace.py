@@ -7,11 +7,12 @@ from pathlib import Path
 from typing import Dict, Any, Tuple, Optional
 
 from bridge.config import (
+    BASE_DIR,
+    SRC_DIR,
     EXCHANGE_DIR, 
     BASE_JOBS_DIR,
     DOCKER_PREFIX, 
-    WINDOWS_PREFIX, 
-    LAUNCH_JS_PATH
+    WINDOWS_PREFIX
 )
 from bridge.utils.logger import logger
 
@@ -126,19 +127,32 @@ def prepare_job_workspace(job_id: str, file_path: str, commands: Dict[str, Any])
 
 def create_runner_script(job_id: str, runner_script_path: Path) -> None:
     """
-    Генерирует скрипт runner.jsx, который вызывает основную логику ExtendScript.
-    Обеспечивает существование родительской директории.
+    Генерирует скрипт runner.jsx для выполнения основного процесса автоматизации.
+    Использует стратегию "Инъекции контекста" с абсолютными путями.
     """
     try:
-        # Проверка существования родительской директории
         runner_script_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # Экранирование обратных косых черт для строки JS
-        launch_js_path_str = str(LAUNCH_JS_PATH).replace("\\", "/")
+        # Подготовка абсолютных путей для JSX
+        code_root = SRC_DIR.as_posix()
+        data_root = EXCHANGE_DIR.as_posix()
+        main_js_path = (SRC_DIR / "core" / "main.js").as_posix()
         
         runner_content = f"""
         var CURRENT_JOB_ID = '{job_id}';
-        $.evalFile('{launch_js_path_str}');
+        var CODE_ROOT = '{code_root}';
+        var DATA_ROOT = '{data_root}';
+        
+        #include "{main_js_path}"
+        
+        // Инициализация путей и запуск
+        Config.init(CODE_ROOT, DATA_ROOT, CURRENT_JOB_ID);
+        
+        // Получаем путь к commands.json
+        var jsonFilePath = Config.paths.JSON_PATH + "/commands.json";
+        
+        // Запуск главной функции
+        main(jsonFilePath, CURRENT_JOB_ID, CODE_ROOT, DATA_ROOT);
         """
         
         with open(runner_script_path, "w", encoding="utf-8") as f:
@@ -227,6 +241,7 @@ def validate_output_pdf(job_id: str) -> Path:
 def generate_inspect_runner(job_id: str) -> Path:
     """
     Генерирует временный inspect_runner.jsx для сканирования структуры документа.
+    Использует стратегию "Инъекции контекста" с абсолютными путями.
     """
     try:
         job_input_dir = BASE_JOBS_DIR / job_id / "input"
@@ -234,24 +249,22 @@ def generate_inspect_runner(job_id: str) -> Path:
         
         runner_path = job_input_dir / "inspect_runner.jsx"
         
-        # Пути для #include в ExtendScript
-        # Нам нужны абсолютные пути с прямыми косых чертами для ExtendScript
-        # Примечание: ожидается, что BASE_DIR определен в bridge.config или аналогичном месте
-        from bridge.config import BASE_DIR
-        main_js_path = (BASE_DIR / "src" / "core" / "main.js").resolve().as_posix()
-        inspector_js_path = (BASE_DIR / "src" / "utils" / "modules" / "inspector.js").resolve().as_posix()
+        # Подготовка абсолютных путей для JSX
+        code_root = SRC_DIR.as_posix()
+        data_root = EXCHANGE_DIR.as_posix()
+        main_js_path = (SRC_DIR / "core" / "main.js").as_posix()
+        inspector_js_path = (SRC_DIR / "utils" / "modules" / "inspector.js").as_posix()
         
         runner_content = f"""
         var CURRENT_JOB_ID = '{job_id}';
+        var CODE_ROOT = '{code_root}';
+        var DATA_ROOT = '{data_root}';
+        
         #include "{main_js_path}"
         #include "{inspector_js_path}"
         
-        // Инициализация Config для задачи
-        var scriptFile = new File($.fileName);
-        var rootPath = scriptFile.parent.parent.parent.parent.fsName; // от exchange/jobs/id/input/ до корня
-        Config.init(rootPath, CURRENT_JOB_ID);
-        
-        // Запуск инспекции
+        // Инициализация путей и запуск
+        Config.init(CODE_ROOT, DATA_ROOT, CURRENT_JOB_ID);
         Inspector.run();
         """
         

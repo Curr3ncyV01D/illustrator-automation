@@ -10,16 +10,18 @@ load_dotenv()
 # bridge/config.py -> parent = bridge -> parent = root
 BASE_DIR = Path(__file__).parent.parent.absolute()
 
+# Директории проекта
+SRC_DIR = BASE_DIR / "src"
+EXCHANGE_DIR = BASE_DIR / "exchange"
+DEV_DIR = BASE_DIR / "dev"
+
 LOG_DIR = BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 LOG_FILE = LOG_DIR / "bridge.log"
 
 # Использование 'exchange' для маппинга томов Docker, 'dev' для локальных ресурсов разработки
-EXCHANGE_DIR = BASE_DIR / "exchange"
-DEV_DIR = BASE_DIR / "dev"
 BASE_JOBS_DIR = EXCHANGE_DIR / "jobs" # Соответствует новой структуре: exchange/jobs/{job_id}/input
 INPUT_DIR = BASE_JOBS_DIR
-LAUNCH_JS_PATH = BASE_DIR / "launch.js"
 
 # Переменные окружения
 DEFAULT_JOB_TIMEOUT_SECONDS = int(os.getenv("BRIDGE_JOB_TIMEOUT_SECONDS", "300"))
