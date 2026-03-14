@@ -16,37 +16,37 @@ from bridge.config import (
 from bridge.utils.logger import logger
 
 class WorkspaceError(Exception):
-    """Base exception for workspace related errors."""
+    """Базовое исключение для ошибок, связанных с рабочим пространством."""
     pass
 
 class TimeoutError(WorkspaceError):
-    """Raised when an operation times out."""
+    """Вызывается при превышении времени ожидания операции."""
     pass
 
 class ValidationError(WorkspaceError):
-    """Raised when validation fails."""
+    """Вызывается при ошибке валидации."""
     pass
 
 def validate_secure_path(path: str, job_id: Optional[str] = None) -> Path:
     """
-    Validates that the provided path is secure and stays within BASE_JOBS_DIR.
-    Prevents Path Traversal attacks.
+    Проверяет безопасность пути и его нахождение внутри BASE_JOBS_DIR.
+    Предотвращает атаки типа Path Traversal.
     """
     try:
-        # 1. Normalize and resolve the path
-        # If it's a job_id, we construct the path to exchange/jobs/{job_id}
+        # 1. Нормализация и разрешение пути
+        # Если это job_id, строим путь к exchange/jobs/{job_id}
         if job_id and not path.startswith(("/", "\\")):
              target_path = BASE_JOBS_DIR / job_id
         else:
-             # It's a file path, possibly from Docker
+             # Это путь к файлу, возможно, из Docker
              target_path = Path(normalize_path(path))
         
-        # Resolve to absolute path to remove ../..
+        # Разрешение в абсолютный путь для удаления ../..
         resolved_path = target_path.resolve()
         resolved_base = BASE_JOBS_DIR.resolve()
         
-        # 2. Check if the path starts with BASE_JOBS_DIR
-        # Using relative_to is the safest way to check if a path is within another
+        # 2. Проверка, начинается ли путь с BASE_JOBS_DIR
+        # Использование relative_to — самый безопасный способ проверить вложенность путей
         try:
             resolved_path.relative_to(resolved_base)
         except ValueError:
@@ -62,69 +62,60 @@ def validate_secure_path(path: str, job_id: Optional[str] = None) -> Path:
 
 def normalize_path(docker_path: str) -> str:
     """
-    Converts Docker path (/data/exchange/...) to Windows path (C:\\...\\exchange\\...).
+    Преобразует путь Docker (/data/exchange/...) в путь Windows (C:\\...\\exchange\\...).
     """
-    # Replace forward slashes with backslashes
+    # Замена прямых косых черт на обратные
     path = docker_path.replace("/", "\\")
     
-    # Remove the docker prefix if present and prepend local prefix
-    # Note: DOCKER_PREFIX is /data/exchange, WINDOWS_PREFIX is ...\exchange
+    # Удаление префикса Docker, если он есть, и добавление локального префикса
+    # Примечание: DOCKER_PREFIX — это /data/exchange, WINDOWS_PREFIX — ...\exchange
     docker_prefix_win = DOCKER_PREFIX.replace("/", "\\")
     
     if path.startswith(docker_prefix_win):
-        # Remove the prefix and ensure no leading backslash for Path join
+        # Удаление префикса и обеспечение отсутствия ведущего обратного слэша для Path join
         relative_path = path[len(docker_prefix_win):].lstrip("\\")
         return str(EXCHANGE_DIR / relative_path)
     
-    # If path starts with /data/ but not /data/exchange (edge case)
+    # Если путь начинается с /data/, но не с /data/exchange (крайний случай)
     if path.startswith("\\data\\"):
-         # Try to map generically if needed, but stick to exchange for now
+         # Попытка общего сопоставления, если нужно, но пока придерживаемся exchange
          pass
 
     return path
 
 def prepare_job_workspace(job_id: str, file_path: str, commands: Dict[str, Any]) -> Tuple[Path, Path]:
     """
-    Creates the job directory structure and writes the commands.json file.
+    Создает структуру директорий задачи и записывает файл commands.json.
     
-    Args:
-        job_id: The unique job identifier.
-        file_path: The Docker path to the source file.
-        commands: The dictionary of commands to execute.
+    Аргументы:
+        job_id: Уникальный идентификатор задачи.
+        file_path: Путь Docker к исходному файлу.
+        commands: Словарь команд для выполнения.
         
-    Returns:
-        Tuple containing (commands_json_path, runner_script_path).
+    Возвращает:
+        Кортеж, содержащий (путь_к_commands_json, путь_к_скрипту_раннера).
     """
     try:
-        # Convert docker path to windows path
+        # Преобразование пути Docker в путь Windows
         windows_source_path = normalize_path(file_path)
         
-        # Create job structure: exchange/jobs/{job_id}/input
+        # Создание структуры задачи: exchange/jobs/{job_id}/input
         job_input_dir = BASE_JOBS_DIR / job_id / "input"
         job_input_dir.mkdir(parents=True, exist_ok=True)
         
-        # Prepare commands.json path
+        # Подготовка пути к commands.json
         commands_file = job_input_dir / "commands.json"
         
-        # Inject targetFile into commands if missing
+        # Добавление targetFile в команды, если он отсутствует
         if "targetFile" not in commands:
             commands["targetFile"] = windows_source_path
         
-        # Write commands.json
+        # Запись commands.json
         with open(commands_file, "w", encoding="utf-8") as f:
             json.dump(commands, f, indent=2, ensure_ascii=False)
             
         logger.info(f"[{job_id}] Prepared workspace. Source: {windows_source_path}")
-        
-        # Determine runner script path (usually adjacent to bridge.py or in temp location)
-        # We'll put it in the job input dir to keep things clean or use a temporary name
-        # The original code put it in BASE_DIR / "runner.jsx". Let's stick to a predictable path 
-        # or maybe make it unique per job to avoid conflicts if we ever go parallel (though COM is single threaded).
-        # For now, let's keep it simple and consistent with original design but maybe unique name?
-        # Actually, original code used a single runner.jsx path which is risky if we have concurrent requests waiting.
-        # But since we have a lock, it's fine. Let's make it unique just in case.
-        # Wait, the prompt says "Runner Creation: Logic for generating temporary runner.jsx".
-        # Let's generate it in the job directory to be safe and clean.
+
         runner_script_path = job_input_dir / "runner.jsx"
         
         return commands_file, runner_script_path
@@ -135,14 +126,14 @@ def prepare_job_workspace(job_id: str, file_path: str, commands: Dict[str, Any])
 
 def create_runner_script(job_id: str, runner_script_path: Path) -> None:
     """
-    Generates the runner.jsx script that calls the main ExtendScript logic.
-    Ensures parent directory exists.
+    Генерирует скрипт runner.jsx, который вызывает основную логику ExtendScript.
+    Обеспечивает существование родительской директории.
     """
     try:
-        # Ensure parent directory exists
+        # Проверка существования родительской директории
         runner_script_path.parent.mkdir(parents=True, exist_ok=True)
         
-        # escape backslashes for JS string
+        # Экранирование обратных косых черт для строки JS
         launch_js_path_str = str(LAUNCH_JS_PATH).replace("\\", "/")
         
         runner_content = f"""
@@ -161,12 +152,12 @@ def create_runner_script(job_id: str, runner_script_path: Path) -> None:
 
 def wait_for_input(commands_json_path: Path, source_ai_path: Optional[Path] = None, timeout: float = 30.0) -> None:
     """
-    Waits for the commands.json file and optionally the source AI file to be ready (Handshake).
+    Ожидает готовности файла commands.json и, опционально, исходного AI файла (Handshake).
     """
     start_wait = time.perf_counter()
     logger.info(f"Waiting for input files: {commands_json_path}" + (f" and {source_ai_path}" if source_ai_path else ""))
     
-    # Log absolute paths for debugging (once before loop)
+    # Логирование абсолютных путей для отладки (один раз перед циклом)
     logger.info(f"DEBUG: Bridge checking path: {os.path.abspath(commands_json_path)}")
     if source_ai_path:
         logger.info(f"DEBUG: Bridge checking path: {os.path.abspath(source_ai_path)}")
@@ -175,12 +166,12 @@ def wait_for_input(commands_json_path: Path, source_ai_path: Optional[Path] = No
         commands_ready = commands_json_path.exists()
         source_ready = source_ai_path.exists() if source_ai_path else True
         
-        # Additional debug check for parent directory
+        # Дополнительная отладочная проверка родительской директории
         if not source_ready and source_ai_path and source_ai_path.parent.exists():
-             # Parent exists but file doesn't
+             # Родитель существует, но файл — нет
              pass
         elif not source_ready and source_ai_path:
-             # Even parent doesn't exist
+             # Даже родительская директория не существует
              pass
 
         if commands_ready and source_ready:
@@ -198,8 +189,8 @@ def wait_for_input(commands_json_path: Path, source_ai_path: Optional[Path] = No
 
 def validate_output_pdf(job_id: str) -> Path:
     """
-    Checks if the output PDF exists and is valid (size > 10KB).
-    Returns the path to the valid PDF.
+    Проверяет существование и валидность выходного PDF (размер > 10 КБ).
+    Возвращает путь к валидному PDF.
     """
     output_pdf_dir = BASE_JOBS_DIR / job_id / "output" / "pdf"
     
@@ -208,7 +199,7 @@ def validate_output_pdf(job_id: str) -> Path:
         raise ValidationError("Output directory not found")
 
     try:
-        # Find the most recent PDF
+        # Поиск самого свежего PDF
         pdf_files = sorted(output_pdf_dir.glob("*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
     except Exception as e:
         logger.error(f"[{job_id}] Failed to access PDF files: {e}")
@@ -226,16 +217,75 @@ def validate_output_pdf(job_id: str) -> Path:
         logger.error(f"[{job_id}] Failed to read PDF size: {e}")
         raise ValidationError(f"Failed to read PDF size: {e}")
 
-    # 10KB = 10 * 1024 bytes
+    # 10 КБ = 10 * 1024 байт
     if pdf_size <= 0 or pdf_size < 10 * 1024:
         logger.error(f"[{job_id}] PDF too small: {latest_pdf} ({pdf_size} bytes)")
         raise ValidationError(f"Generated PDF is empty or corrupted (Size: {pdf_size} bytes)")
 
     return latest_pdf
 
+def generate_inspect_runner(job_id: str) -> Path:
+    """
+    Генерирует временный inspect_runner.jsx для сканирования структуры документа.
+    """
+    try:
+        job_input_dir = BASE_JOBS_DIR / job_id / "input"
+        job_input_dir.mkdir(parents=True, exist_ok=True)
+        
+        runner_path = job_input_dir / "inspect_runner.jsx"
+        
+        # Пути для #include в ExtendScript
+        # Нам нужны абсолютные пути с прямыми косых чертами для ExtendScript
+        # Примечание: ожидается, что BASE_DIR определен в bridge.config или аналогичном месте
+        from bridge.config import BASE_DIR
+        main_js_path = (BASE_DIR / "src" / "core" / "main.js").resolve().as_posix()
+        inspector_js_path = (BASE_DIR / "src" / "utils" / "modules" / "inspector.js").resolve().as_posix()
+        
+        runner_content = f"""
+        var CURRENT_JOB_ID = '{job_id}';
+        #include "{main_js_path}"
+        #include "{inspector_js_path}"
+        
+        // Инициализация Config для задачи
+        var scriptFile = new File($.fileName);
+        var rootPath = scriptFile.parent.parent.parent.parent.fsName; // от exchange/jobs/id/input/ до корня
+        Config.init(rootPath, CURRENT_JOB_ID);
+        
+        // Запуск инспекции
+        Inspector.run();
+        """
+        
+        with open(runner_path, "w", encoding="utf-8") as f:
+            f.write(runner_content)
+            
+        logger.info(f"[{job_id}] Generated inspect runner at {runner_path}")
+        return runner_path
+        
+    except Exception as e:
+        logger.error(f"[{job_id}] Failed to generate inspect runner: {e}")
+        raise WorkspaceError(f"Failed to generate inspect runner: {e}")
+
+def read_structure_json(job_id: str) -> Dict[str, Any]:
+    """
+    Читает файл structure.json из директории output/logs задачи.
+    """
+    try:
+        structure_file = BASE_JOBS_DIR / job_id / "output" / "logs" / "structure.json"
+        
+        if not structure_file.exists():
+            logger.error(f"[{job_id}] Structure JSON not found at {structure_file}")
+            raise WorkspaceError(f"Structure JSON not found for job {job_id}")
+            
+        with open(structure_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+            
+    except Exception as e:
+        logger.error(f"[{job_id}] Failed to read structure JSON: {e}")
+        raise WorkspaceError(f"Failed to read structure JSON: {e}")
+
 def cleanup_job_workspace(job_id: str, runner_script_path: Optional[Path] = None):
     """
-    Cleans up temporary files like the runner script.
+    Очищает временные файлы, такие как скрипт раннера.
     """
     if runner_script_path and runner_script_path.exists():
         try:

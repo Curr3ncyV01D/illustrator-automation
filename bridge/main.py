@@ -3,7 +3,7 @@ import threading
 from pathlib import Path
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Depends, BackgroundTasks
-from bridge.models import JobRequest, StatusResponse
+from bridge.models import JobRequest, StatusResponse, InspectRequest, InspectResponse
 from bridge.utils.security import verify_api_key
 from bridge.utils.logger import logger
 from bridge.config import DEFAULT_JOB_TIMEOUT_SECONDS
@@ -15,6 +15,8 @@ from bridge.services.workspace import (
     wait_for_input,
     validate_output_pdf,
     cleanup_job_workspace,
+    generate_inspect_runner,
+    read_structure_json,
     WorkspaceError,
     ValidationError as WorkspaceValidationError,
     TimeoutError as WorkspaceTimeoutError,
@@ -119,6 +121,67 @@ async def process_job(
     
     return {"status": "success", "job_id": job.job_id, "message": "Job accepted and processing in background"}
 
+
+@app.post("/inspect", response_model=InspectResponse)
+async def inspect_document(
+    request: InspectRequest,
+    _: str = Depends(verify_api_key),
+):
+    """
+    Эндпоинт для инспекции структуры документа Illustrator.
+    """
+    job_id = request.job_id
+    
+    # 1. Проверка блокировки
+    if busy_lock.locked():
+        raise HTTPException(status_code=429, detail="Service is busy processing another job")
+    
+    # 2. Валидация Job ID (Path Traversal)
+    try:
+        validate_secure_path(job_id, job_id=job_id)
+    except (PermissionError, WorkspaceValidationError) as e:
+        logger.error(f"Security Warning: Access Denied for job_id={job_id}. Error: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # 3. Выполнение инспекции
+    acquired = busy_lock.acquire(blocking=False)
+    if not acquired:
+        raise HTTPException(status_code=429, detail="Service is busy processing another job")
+    
+    inspect_runner_path = None
+    try:
+        logger.info(f"[{job_id}] Starting inspection task")
+        
+        # Генерация временного раннера
+        inspect_runner_path = generate_inspect_runner(job_id)
+        
+        # Запуск Illustrator через сервис
+        await illustrator_service.run_script_with_watchdog(inspect_runner_path, job_id)
+        
+        # Чтение результата
+        structure = read_structure_json(job_id)
+        
+        logger.info(f"[{job_id}] Inspection completed successfully")
+        return {"structure": structure}
+        
+    except (WorkspaceTimeoutError, IllustratorTimeoutError) as e:
+        logger.error(f"[{job_id}] Inspection TIMEOUT: {e}")
+        raise HTTPException(status_code=504, detail=f"Inspection timeout: {str(e)}")
+    except (WorkspaceError, IllustratorError) as e:
+        logger.error(f"[{job_id}] Inspection ERROR: {e}")
+        raise HTTPException(status_code=500, detail=f"Inspection error: {str(e)}")
+    except Exception as e:
+        logger.error(f"[{job_id}] Inspection UNEXPECTED ERROR: {e}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+    finally:
+        # Очистка временного раннера
+        if inspect_runner_path:
+            cleanup_job_workspace(job_id, inspect_runner_path)
+        
+        # Освобождение блокировки
+        if busy_lock.locked():
+            busy_lock.release()
+            logger.info(f"[{job_id}] Released lock after inspection")
 
 
 if __name__ == "__main__":

@@ -10,3 +10,9 @@ class JobRequest(BaseModel):
 class StatusResponse(BaseModel):
     status: str
     is_busy: bool
+
+class InspectRequest(BaseModel):
+    job_id: str
+
+class InspectResponse(BaseModel):
+    structure: Dict[str, Any]

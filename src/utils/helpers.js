@@ -8,8 +8,22 @@
 #include "modules/objectFinder.js"
 #include "modules/pathResolver.js"
 #include "modules/styleScaler.js"
+#include "modules/inspector.js"
+#include "logger.js"
 
 var Helpers = {
+    /**
+     * Анализ структуры документа
+     * См. src/utils/modules/inspector.js
+     */
+    inspector: Inspector,
+
+    /**
+     * Система логирования
+     * См. src/utils/logger.js
+     */
+    logger: Logger,
+
     /**
      * Конвертация единиц измерения
      * См. src/utils/modules/unitConverter.js
