@@ -32,9 +32,9 @@
     {
       "id": "shortenCollar1",
       "type": "resize",
-      "target":"Слой 1/Воротник/БольшойКонтур",
+      "target": "Слой 1/Воротник/БольшойКонтур",
       "parameters": {
-        "width": {                      
+        "width": {
           "value": 30,
           "unit": "mm",
           "action": "decrease"
@@ -45,29 +45,33 @@
     {
       "id": "shortenCollar2",
       "type": "resize",
-      "target":"Слой 1/Воротник/МалыйКонтур",
+      "target": "Слой 1/Воротник/МалыйКонтур",
       "parameters": {
-        "width": {                      
+        "width": {
           "value": 30,
           "unit": "mm",
           "action": "decrease"
         }
       },
-      "dependencies": ["shortenCollar1"]
+      "dependencies": [
+        "shortenCollar1"
+      ]
     },
     {
       "id": "liftingCollar",
       "type": "move",
-      "target":"Слой 1/Воротник/МалыйКонтур",
+      "target": "Слой 1/Воротник/МалыйКонтур",
       "parameters": {
-      "mode": "relative",
-      "y": {
-        "value": 2,
-        "unit": "mm",
-        "action": "increase"
+        "mode": "relative",
+        "y": {
+          "value": 2,
+          "unit": "mm",
+          "action": "increase"
+        }
       },
-      "dependencies": ["shortenCollar2"]
-      }
+      "dependencies": [
+          "shortenCollar2"
+      ]
     }
   ]
 }
