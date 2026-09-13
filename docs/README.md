@@ -195,16 +195,16 @@ docker compose up -d
 
 | Раздел | 📖 Справочники (Reference) | 🛠️ Инструкции (How-to) | 🧠 Концепции (Explanation) |
 | :--- | :--- | :--- | :--- |
-| **00. Архитектура** | [Глоссарий](./docs/00_architecture/glossary.md) | - | [System Big Picture](./docs/00_architecture/big_picture.md) |
-| **01. Оркестратор n8n** | [Спецификация n8n](./docs/01_n8n/reference.md) | [Сброс очереди задач](./docs/01_n8n/how_to.md) | [Manual Polling стратегия](./docs/01_n8n/explanation.md) |
-| **02. Python Bridge** | [API & Models](./docs/02_bridge/reference.md) | [Запуск тестов](./docs/02_bridge/how_to.md) | [Handshake & IPC](./docs/02_bridge/explanation.md) |
-| **03. ExtendScript Core** | [Реестр операций](./docs/03_extendscript/reference.md) | [Создание новых CAD-операций](./docs/03_extendscript/how_to.md) | [Паттерн Registry в ES3](./docs/03_extendscript/explanation.md) |
+| **00. Архитектура** | [Глоссарий](./00_architecture/glossary.md) | - | [System Big Picture](./00_architecture/big_picture.md) |
+| **01. Оркестратор n8n** | [Спецификация n8n](./01_n8n/reference.md) | [Сброс очереди задач](./01_n8n/how_to.md) | [Manual Polling стратегия](./01_n8n/explanation.md) |
+| **02. Python Bridge** | [API & Models](./02_bridge/reference.md) | [Запуск тестов](./02_bridge/how_to.md) | [Handshake & IPC](./02_bridge/explanation.md) |
+| **03. ExtendScript Core** | [Реестр операций](./03_extendscript/reference.md) | [Создание новых CAD-операций](./03_extendscript/how_to.md) | [Паттерн Registry в ES3](./03_extendscript/explanation.md) |
 
 ### Системные спецификации
-* [Потоки данных и синхронизация (Data Flow)](./docs/00_architecture/data_flow.md)
-* [Жизненный цикл задачи (Task Lifecycle)](./docs/00_architecture/lifecycle.md)
-* [Модель безопасности песочницы (Security Model)](./docs/00_architecture/security_model.md)
-* [Системный промпт ИИ-агента](./docs/04_ai_integration/ai_system_prompt.md)
+* [Потоки данных и синхронизация (Data Flow)](./00_architecture/data_flow.md)
+* [Жизненный цикл задачи (Task Lifecycle)](./00_architecture/lifecycle.md)
+* [Модель безопасности песочницы (Security Model)](./00_architecture/security_model.md)
+* [Системный промпт ИИ-агента](./04_ai_integration/ai_system_prompt.md)
 
 ---
 
