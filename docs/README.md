@@ -1,108 +1,216 @@
-# 👔 Clothing CAD Automation
+# 👔 Clothing CAD Automation: Headless Adobe Illustrator Pipeline
 
-> **Автономный агент для промышленного редактирования лекал и автоматизации графических процессов в Adobe Illustrator.**
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Adobe Illustrator](https://img.shields.io/badge/Adobe_Illustrator-ExtendScript_ES3-FF9A00?style=for-the-badge&logo=adobeillustrator&logoColor=white)](https://developer.adobe.com/illustrator/scripting/)
+[![n8n](https://img.shields.io/badge/n8n-Orchestration-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)](https://n8n.io)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![Diátaxis](https://img.shields.io/badge/Docs-Diátaxis_Framework-00ADD8?style=for-the-badge)](https://diataxis.fr)
 
-Система превращает настольное приложение Adobe Illustrator в масштабируемый веб-сервис, способный обрабатывать заказы из Telegram в режиме 24/7 без участия человека.
+> **Автономный агентный конвейер для промышленного редактирования лекал и автоматизации графических CAD-процессов в Adobe Illustrator без участия человека.**
 
----
-
-## 🚀 Ключевые особенности
-
-- **🔒 Работа без публичного IP**: Использует механизм **Manual Polling**, что позволяет разворачивать систему в закрытых корпоративных сетях без настройки входящих портов и вебхуков.
-- **🛡️ Защита от зависаний**: Встроенный **Watchdog** в Python-мосте и логика **Early Exit** в n8n предотвращают простой конвейера, мгновенно реагируя на ошибки или "вечные" циклы внутри Illustrator.
-- **📦 Безопасная песочница**: Строгая валидация путей (**Path Traversal Protection**) и изоляция каждой задачи в отдельной директории гарантируют, что скрипты не получат доступ к системным файлам хоста.
-- **🚦 Умное управление очередями**: Синхронизация файлов через **Handshake** и строгий контроль параллелизма (`is_busy`) защищают однопоточный Illustrator от сбоев при пиковых нагрузках.
-- **🛑 Стратегия Fail-Fast**: Все входящие JSON-команды проходят строгую валидацию по схемам до запуска графического редактора. Это исключает порчу лекал из-за неверных параметров.
-- **🧩 Модульное графическое ядро**: Использование паттерна **Registry** в ExtendScript позволяет масштабировать функционал (добавлять новые операции редактирования чертежей) без вмешательства в ядро системы.
-- **🧹 Полная автономность**: Работа Illustrator в режиме **Headless** (без диалоговых окон), автоматическая отправка готовых PDF/AI файлов в Telegram и "гигиеническая" очистка диска после завершения задачи.
-- **💉 Инъекция контекста**: Система использует **Context Injection Strategy**, где Python-мост диктует абсолютные пути ExtendScript-ядру. Это исключает ошибки самообнаружения путей и делает систему независимой от рабочего каталога Illustrator.
+Система превращает настольное приложение Adobe Illustrator в масштабируемый сервис пакетной обработки чертежей и конфекционных карт. Пайплайн принимает задания из Telegram, валидирует параметры по JSON-схемам, выполняет векторные операции через собственный ExtendScript-движок и возвращает готовые производственные артефакты (PDF/AI).
 
 ---
 
-## 🛠️ Технический стек
+## 🏗️ Архитектура системы (System Design)
 
-- **Логическое ядро (n8n)**: Оркестрация воркфлоу, работа с API Telegram и управление очередью задач.
-- **Мост (Bridge)**: Python-сервис (FastAPI) для управления Adobe Illustrator через COM-интерфейс и динамической генерации Раннеров.
-- **Графическое ядро (Adobe Illustrator / ExtendScript)**: Исполнение сложной геометрической логики и экспорт файлов.
+Система построена на гетерогенной трехуровневой архитектуре с изоляцией сред исполнения:
+
+```mermaid
+flowchart TD
+    subgraph ClientLayer ["1. Входной уровень"]
+        User["Пользователь / Менеджер (Telegram)"]
+    end
+
+    subgraph OrchestrationLayer ["2. Слой оркестрации (Docker / Linux)"]
+        N8N["n8n Workflow Engine"]
+        N8N_Polling["Manual Polling Worker"]
+        N8N_LLM["AI / Schema Parser"]
+    end
+
+    subgraph HostBridgeLayer ["3. Слой хост-моста (Windows Host / Python)"]
+        Bridge["FastAPI Bridge Server (127.0.0.1:8000)"]
+        Security["Path Traversal & Security Validator"]
+        Workspace["Workspace Isolation Manager"]
+        Watchdog["Process Watchdog & Timeout Supervisor (psutil)"]
+        RunnerGen["Dynamic Runner.jsx Generator"]
+    end
+
+    subgraph GraphicCoreLayer ["4. Графическое ядро (Adobe Illustrator)"]
+        COM["pywin32 COM Dispatch Interface"]
+        AI_App["Adobe Illustrator (Headless Session)"]
+        ES_Orchestrator["ExtendScript Core Orchestrator"]
+        Registry["Operation Registry (Command Pattern)"]
+        Ops["CAD Operations (Resize / Move / Replace / ConfectionCard)"]
+    end
+
+    subgraph StorageLayer ["5. Файловый обмен (Shared Volume / Disk)"]
+        InputFiles["Исходные лекала (*.ai)"]
+        OutputFiles["Готовые PDF / AI артефакты"]
+    end
+
+    User <-->|Задание / PDF артефакты| N8N
+    N8N <-->|REST API + Bearer Token| Bridge
+    Bridge -->|Создание песочницы| Workspace
+    Bridge -->|Генерация контекста| RunnerGen
+    RunnerGen -->|Инъекция путей и вызов| COM
+    COM -->|Запуск скрипта| AI_App
+    AI_App -->|Выполнение операций| ES_Orchestrator
+    ES_Orchestrator --> Registry --> Ops
+    Ops <-->|Чтение / Запись| StorageLayer
+    Watchdog -.->|Мониторинг зависаний| AI_App
+```
 
 ---
 
-## 🏗️ Архитектура системы
+## ⚡ Жизненный цикл задачи (Data Flow & Sequence)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Telegram User
+    participant n8n as n8n Orchestrator (Docker)
+    participant Bridge as FastAPI Bridge (Python)
+    participant Illustrator as Adobe Illustrator (COM)
+    participant Core as ExtendScript Core (JS)
+
+    User->>n8n: Отправка параметров / файла
+    n8n->>n8n: Валидация JSON схемы
+    n8n->>Bridge: POST /jobs (JSON Payload + Auth Token)
+    
+    activate Bridge
+    Bridge->>Bridge: Path Traversal Check & Создание Workspace
+    Bridge->>Bridge: Генерация динамического Runner.jsx (Context Injection)
+    Bridge->>Illustrator: COM Dispatch: DoJavaScript(Runner.jsx)
+    
+    activate Illustrator
+    Illustrator->>Core: Запуск Orchestrator & валидация параметров
+    Core->>Core: Выполнение операций из Registry (Move, Resize, StyleScale)
+    Core->>Illustrator: Экспорт готового PDF/AI в Workspace
+    Illustrator-->>Bridge: Возврат логов и кода завершения
+    deactivate Illustrator
+    
+    Bridge->>Bridge: Анализ логов (Log Analyzer) & Очистка памяти
+    Bridge-->>n8n: HTTP 200 OK + Путь к готовому артефакту
+    deactivate Bridge
+    
+    n8n->>User: Отправка готового производственного файла
+```
+
+---
+
+## 🚀 Ключевые инженерные решения
+
+* **Context Injection Strategy (Изоляция путей):** ExtendScript-ядро не занимается самообнаружением путей. Python-мост транслирует абсолютные пути песочницы непосредственно в генерируемый `Runner.jsx`, предотвращая коллизии при параллельных вызовах.
+* **Process Watchdog & Early Exit (`psutil`):** Защита от зависания однопоточного COM-сервера Illustrator. При превышении таймаута воркер корректно перехватывает процесс, завершает сессию и предотвращает блокировку всей очереди.
+* **Path Traversal Protection (`security.py`):** Все входящие пути к компонентам и шаблонам проходят строгую нормализацию и проверку выхода за пределы рабочей директории.
+* **Паттерн Registry в ExtendScript:** Модульное расширение графических операций без модификации ядра. Новая операция добавляется изолированным файлом в `src/operations/` и регистрируется в `operationRegistry.js`.
+* **Fail-Fast валидация схем (`schemas/`):** JSON-схемы верифицируются дважды: на уровне Pydantic-моделей в Python и на уровне JS-валидатора перед выполнением трансформаций лекал.
+* **Работа без внешнего белого IP (Manual Polling):** Контур n8n работает в закрытой корпоративной сети без открытия входящих портов наружу.
+
+---
+
+## 📂 Структура репозитория
 
 ```text
-[ User (Telegram) ] 
-        ↓
-[ Logic Core (n8n) ]  <-- Оркестрация в Docker
-        ↓
-[ Bridge (Python) ]   <-- Трансляция путей и генерация Runner.jsx
-        ↓
-[ Graphical Core (AI) ] <-- Исполнение команд через ExtendScript(Adobe Illustrator)
+illustrator-automation/
+├── bridge/                     # Python FastAPI сервис управления Illustrator
+│   ├── services/
+│   │   ├── illustrator.py      # COM-интерфейс (pywin32) и генератор раннеров
+│   │   └── workspace.py        # Управление изолированными песочницами задач
+│   ├── utils/
+│   │   ├── log_analyzer.py     # Парсер ExtendScript-логов выполнения
+│   │   └── security.py         # Защита от Path Traversal
+│   ├── config.py               # Pydantic Settings конфигурация
+│   ├── models.py               # Pydantic схемы валидации задач
+│   └── main.py                 # FastAPI приложение и эндпоинты
+├── src/                        # ExtendScript (ES3) ядро для Adobe Illustrator
+│   ├── core/                   # Оркестратор и диспетчер команд
+│   ├── operations/             # Модули CAD-операций (Move, Resize, Replace, ConfectionCard)
+│   ├── schemas/                # JSON-схемы валидации команд
+│   └── utils/                  # Модули инспекции, конвертеры единиц (pt/mm/in), масштабирование стилей
+├── dev/                        # Тестовый контур, фикстуры лекал (*.ai) и интеграционные тесты
+├── docs/                       # Документация по стандарту Diátaxis
+│   ├── 00_architecture/        # Системный дизайн, модель безопасности и потоки данных
+│   ├── 01_n8n/                 # Спецификация и инструкции узлов n8n
+│   ├── 02_bridge/              # Спецификация FastAPI моста
+│   ├── 03_extendscript/        # Спецификация ExtendScript ядра
+│   └── 04_ai_integration/     # Промпты и системные инструкции ИИ-агента
+├── docker-compose.yml.example  # Пример оркестрации n8n в контейнере
+└── requirements.txt            # Зафиксированные зависимости Python
 ```
 
 ---
 
-## ⚡ Быстрый старт
+## ⚡ Быстрый старт (Локальное развертывание)
 
-### 1. Настройка переменных окружения
-Создайте файл `.env` в корне проекта (или скопируйте из `.env.example`) и укажите ключи доступа:
-```env
-BRIDGE_API_KEY=ваш_сложный_секретный_ключ
-```
+### 1. Подготовка окружения Моста (Windows Host)
 
-### 2. Запуск Логического ядра (n8n в Docker)
+Для взаимодействия с Adobe Illustrator через COM-интерфейс Python-мост запускается непосредственно на хост-машине:
 
-Создайте файл `docker-compose.yml` в корне проекта (или скопируйте из `docker-compose.yml.example`) и укажите переменные виртуального окружения:
-
-Убедитесь, что в вашем `docker-compose.yml` прописаны переменный виртуального окружения и критические разрешения для n8n:
-```
-environment:
-- TELEGRAM_BOT_TOKEN=токен-бота-от-BotFather
-- BRIDGE_API_KEY=секретный-ключ-сюда
-- BRIDGE_JOB_TIMEOUT_SECONDS=300 #время-ожидания-моста-в-секундах(по умолчанию 300)
-- N8N_BLOCK_ENV_ACCESS_IN_NODE=false #для чтения ключа моста.
-- NODE_FUNCTION_ALLOW_BUILTIN=fs,path #для работы с файлами.
-- NODE_FUNCTION_ALLOW_EXTERNAL=fs-extra #для работы с файлами.
-```
-
-Разверните контейнеры:
-```bash
-docker-compose up -d
-```
-
-### 3. Подготовка и запуск Моста (Windows Host)
-Мост работает в изолированном окружении Python. Откройте терминал в папке проекта:
 ```powershell
-# Создание и активация виртуального окружения
+# Клонирование репозитория
+git clone https://github.com/Curr3ncyV01D/illustrator-automation.git
+cd illustrator-automation
+
+# Настройка виртуального окружения
 python -m venv venv
 .\venv\Scripts\activate
-
-# Установка зависимостей
 pip install -r requirements.txt
 
-# Запуск моста (строго на localhost для безопасности)
-python -m uvicorn bridge.main:app --host 127.0.0.1 --port 8000
+# Настройка конфигурации
+cp .env.example .env
 ```
 
-### 4. Настройка Оркестрации
-1. Откройте интерфейс n8n в браузере: `http://localhost:5678`.
-2. Импортируйте JSON-схему воркфлоу из папки проекта.
-3. В узлах `Telegram` выберите (или создайте) **Credentials** с вашим токеном бота.
-4. Нажмите кнопку **Publish** в правом верхнем углу, чтобы бот начал прослушивать Telegram в автономном режиме.
+Заполните `.env`:
+```env
+BRIDGE_API_KEY=your_secure_api_key_here
+HOST=127.0.0.1
+PORT=8000
+```
+
+Запуск сервиса моста:
+```powershell
+uvicorn bridge.main:app --host 127.0.0.1 --port 8000
+```
+
+### 2. Запуск n8n в Docker
+
+```bash
+cp docker-compose.yml.example docker-compose.yml
+docker compose up -d
+```
+
+1. Откройте интерфейс n8n: `http://localhost:5678`.
+2. Импортируйте воркфлоу из папки проекта.
+3. Укажите `BRIDGE_API_KEY` и Telegram Bot Credentials.
+4. Активируйте сценарий (кнопка **Publish**).
 
 ---
 
-## 📚 Навигация по документации (Методология Diátaxis)
+## 📚 Документация (Методология Diátaxis)
 
-Документация проекта структурирована по принципу Diátaxis для удобства навигации.
+Документация проекта полностью организована по международному фреймворку **Diátaxis**:
 
 | Раздел | 📖 Справочники (Reference) | 🛠️ Инструкции (How-to) | 🧠 Концепции (Explanation) |
 | :--- | :--- | :--- | :--- |
-| **Общее** | [Глоссарий](./00_architecture/glossary.md) | - | [Архитектура](./00_architecture/big_picture.md) |
-| **n8n** | [Узлы и переменные](./01_n8n/reference.md) | [Сброс очереди](./01_n8n/how_to.md) | [Почему Polling?](./01_n8n/explanation.md) |
-| **Bridge** | [API и Модели](./02_bridge/reference.md) | [Запуск тестов](./02_bridge/how_to.md) | [Handshake](./02_bridge/explanation.md) |
-| **Illustrator** | [Реестр команд](./03_extendscript/reference.md) | [Новые операции](./03_extendscript/how_to.md) | [Паттерн Registry](./03_extendscript/explanation.md) |
+| **00. Архитектура** | [Глоссарий](./docs/00_architecture/glossary.md) | - | [System Big Picture](./docs/00_architecture/big_picture.md) |
+| **01. Оркестратор n8n** | [Спецификация n8n](./docs/01_n8n/reference.md) | [Сброс очереди задач](./docs/01_n8n/how_to.md) | [Manual Polling стратегия](./docs/01_n8n/explanation.md) |
+| **02. Python Bridge** | [API & Models](./docs/02_bridge/reference.md) | [Запуск тестов](./docs/02_bridge/how_to.md) | [Handshake & IPC](./docs/02_bridge/explanation.md) |
+| **03. ExtendScript Core** | [Реестр операций](./docs/03_extendscript/reference.md) | [Создание новых CAD-операций](./docs/03_extendscript/how_to.md) | [Паттерн Registry в ES3](./docs/03_extendscript/explanation.md) |
 
-### Дополнительные материалы
-- [Потоки данных и синхронизация](./00_architecture/data_flow.md)
-- [Жизненный цикл задачи](./00_architecture/lifecycle.md)
-- [Модель безопасности](./00_architecture/security_model.md)
+### Системные спецификации
+* [Потоки данных и синхронизация (Data Flow)](./docs/00_architecture/data_flow.md)
+* [Жизненный цикл задачи (Task Lifecycle)](./docs/00_architecture/lifecycle.md)
+* [Модель безопасности песочницы (Security Model)](./docs/00_architecture/security_model.md)
+* [Системный промпт ИИ-агента](./docs/04_ai_integration/ai_system_prompt.md)
+
+---
+
+## 🛠️ Стек технологий
+
+* **Оркестрация и воронка:** `n8n`, `Telegram Bot API`
+* **Бэкенд моста:** `Python 3.11+`, `FastAPI`, `Pydantic v2`, `pywin32 (COM)`, `psutil`
+* **Графическое ядро:** `Adobe Illustrator (Headless)`, `ExtendScript (ECMAScript 3)`
+* **Контейнеризация и окружение:** `Docker`, `Docker Compose`
